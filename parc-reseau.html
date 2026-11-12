@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parc Réseau Informatique – CIDST</title>
+<style>
+  :root {
+    --primary: #af0000;
+    --primary-dark: #7d0000;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --ko: #dc2626;
+    --info: #2563eb;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: .9rem; }
+  header a { color: #fff; text-decoration: none; font-size: .9rem; opacity: .9; }
+  header a:hover { opacity: 1; text-decoration: underline; }
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 28px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  nav.tabs button {
+    background: none;
+    border: none;
+    padding: 14px 18px;
+    font-size: .95rem;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+  nav.tabs button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
+  section.view { display: none; }
+  section.view.active { display: block; }
+  .grid-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    padding: 18px;
+    border: 1px solid var(--border);
+  }
+  .stat .label { color: var(--muted); font-size: .85rem; }
+  .stat .value { font-size: 2rem; font-weight: 700; margin-top: 6px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  h2 { font-size: 1.1rem; margin: 0 0 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: .9rem; }
+  .bar-row .name { width: 150px; flex-shrink: 0; }
+  .bar-row .bar { flex: 1; background: #f1f1f1; border-radius: 6px; height: 12px; overflow: hidden; }
+  .bar-row .bar span { display: block; height: 100%; background: var(--primary); }
+  .bar-row .count { width: 32px; text-align: right; font-weight: 600; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .toolbar .spacer { flex: 1; }
+  input, select, textarea {
+    font: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid rgba(175,0,0,.25); border-color: var(--primary); }
+  button.btn {
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+  }
+  button.btn:hover { background: #f9fafb; }
+  button.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  button.btn.primary:hover { background: var(--primary-dark); }
+  button.btn.danger { color: var(--ko); }
+  button.btn.small { padding: 4px 9px; font-size: .85rem; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { background: #fafafa; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; position: sticky; top: 0; }
+  th.nosort { cursor: default; }
+  tbody tr:hover { background: #fdf6f6; }
+  td.actions { display: flex; gap: 6px; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+  .badge.ok { background: #dcfce7; color: var(--ok); }
+  .badge.warn { background: #fef3c7; color: var(--warn); }
+  .badge.ko { background: #fee2e2; color: var(--ko); }
+  .badge.info { background: #dbeafe; color: var(--info); }
+  .badge.muted { background: #f3f4f6; color: var(--muted); }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .empty { text-align: center; padding: 40px; color: var(--muted); }
+  .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; font-size: .9rem; }
+  .alert.ko { background: #fee2e2; color: #991b1b; }
+  .alert.warn { background: #fef3c7; color: #92400e; }
+  .alert.ok { background: #dcfce7; color: #166534; }
+  dialog {
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    width: min(720px, 95vw);
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog form { padding: 22px; }
+  dialog h3 { margin: 0 0 16px; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
+  .form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .subnet-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; margin-top: 12px; }
+  .subnet-grid div {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: #eef2f7;
+    font-size: .6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+  }
+  .subnet-grid div.used { background: var(--primary); color: #fff; cursor: help; }
+  .subnet-grid div.reserved { background: #9ca3af; color: #fff; }
+  .subnet-grid div.conflict { background: var(--warn); color: #fff; cursor: help; }
+  .legend { display: flex; gap: 16px; font-size: .8rem; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+  .topo { display: flex; flex-direction: column; gap: 14px; }
+  .topo-node { border-left: 3px solid var(--primary); padding-left: 14px; }
+  .topo-node .title { font-weight: 600; }
+  .topo-node .children { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .topo-node .children .topo-node { border-left-color: #d1d5db; }
+  .hint { color: var(--muted); font-size: .85rem; }
+  footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 20px; }
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+    .subnet-grid { grid-template-columns: repeat(8, 1fr); }
+  }
+  @media print {
+    header, nav.tabs, .toolbar, td.actions, th.nosort, footer { display: none !important; }
+    section.view { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Parc Réseau Informatique</h1>
+    <p>CIDST – Service Réseau et Système d’Information</p>
+  </div>
+  <a href="index.html">&larr; Retour au site CIDST</a>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button data-view="dashboard" class="active">Tableau de bord</button>
+  <button data-view="equipements">Équipements</button>
+  <button data-view="reseaux">Réseaux &amp; adresses IP</button>
+  <button data-view="topologie">Topologie</button>
+  <button data-view="interventions">Interventions</button>
+  <button data-view="donnees">Import / Export</button>
+</nav>
+
+<main>
+
+  <section id="view-dashboard" class="view active">
+    <div class="grid-stats" id="stats"></div>
+    <div id="alerts"></div>
+    <div class="grid-2">
+      <div class="card"><h2>Répartition par type</h2><div id="chart-type"></div></div>
+      <div class="card"><h2>Répartition par emplacement</h2><div id="chart-site"></div></div>
+      <div class="card"><h2>État du parc</h2><div id="chart-etat"></div></div>
+      <div class="card"><h2>Garanties arrivant à échéance (90 jours)</h2><div id="garanties"></div></div>
+    </div>
+  </section>
+
+  <section id="view-equipements" class="view">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Rechercher (nom, IP, MAC, n° série, utilisateur…)" style="min-width:300px">
+      <select id="filter-type"><option value="">Tous les types</option></select>
+      <select id="filter-etat"><option value="">Tous les états</option></select>
+      <select id="filter-site"><option value="">Tous les emplacements</option></select>
+      <span class="spacer"></span>
+      <button class="btn" onclick="window.print()">Imprimer</button>
+      <button class="btn primary" id="btn-add">+ Ajouter un équipement</button>
+    </div>
+    <div class="card table-wrap" style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="nom">Nom</th>
+            <th data-sort="type">Type</th>
+            <th data-sort="marque">Marque / Modèle</th>
+            <th data-sort="ip">Adresse IP</th>
+            <th data-sort="mac">Adresse MAC</th>
+            <th data-sort="site">Emplacement</th>
+            <th data-sort="utilisateur">Utilisateur</th>
+            <th data-sort="etat">État</th>
+            <th class="nosort">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-equipements"></tbody>
+      </table>
+    </div>
+    <p class="hint" id="count-equipements"></p>
+  </section>
+
+  <section id="view-reseaux" class="view">
+    <div class="toolbar">
+      <span class="hint">Déclarez les sous-réseaux (VLAN) pour suivre l’occupation des adresses IP.</span>
+      <span class="spacer"></span>
+      <button class="btn primary" id="btn-add-reseau">+ Ajouter un réseau</button>
+    </div>
+    <div id="reseaux-list" class="grid-2"></div>
+  </section>
+
+  <section id="view-topologie" class="view">
+    <div class="card">
+      <h2>Topologie physique</h2>
+      <p class="hint">Basée sur le champ « Connecté à » de chaque équipement.</p>
+      <div id="topo" class="topo"></div>
+    </div>
+  </section>
+
+  <section id="view-interventions" class="view">
+    <div class="toolbar">
+      <span class="hint">Historique des maintenances, pannes et mises à jour.</span>
+      <span class="spacer"></span>
+      <button class="btn primary" id="btn-add-intervention">+ Nouvelle intervention</button>
+    </div>
+    <div class="card table-wrap" style="padding:0">
+      <table>
+        <thead>
+          <tr><th class="nosort">Date</th><th class="nosort">Équipement</th><th class="nosort">Type</th><th class="nosort">Description</th><th class="nosort">Technicien</th><th class="nosort">Statut</th><th class="nosort">Actions</th></tr>
+        </thead>
+        <tbody id="tbody-interventions"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-donnees" class="view">
+    <div class="grid-2">
+      <div class="card">
+        <h2>Exporter</h2>
+        <p class="hint">Les données sont enregistrées dans ce navigateur. Exportez-les régulièrement pour les sauvegarder ou les partager.</p>
+        <div class="toolbar">
+          <button class="btn primary" id="btn-export-json">Sauvegarde complète (JSON)</button>
+          <button class="btn" id="btn-export-csv">Équipements (CSV / Excel)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Importer</h2>
+        <p class="hint">Restaurer une sauvegarde JSON ou importer une liste d’équipements CSV (séparateur « ; » ou « , », avec en-têtes).</p>
+        <input type="file" id="file-import" accept=".json,.csv">
+        <div id="import-result" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h2>Réinitialiser</h2>
+        <p class="hint">Recharger les données d’exemple ou tout effacer.</p>
+        <div class="toolbar">
+          <button class="btn" id="btn-demo">Charger l’exemple</button>
+          <button class="btn danger" id="btn-clear">Tout effacer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>&copy; CIDST – Centre d’Information et de Documentation Scientifique et Technique</footer>
+
+<dialog id="dlg-equipement">
+  <form method="dialog" id="form-equipement">
+    <h3 id="dlg-equipement-title">Équipement</h3>
+    <input type="hidden" name="id">
+    <div class="form-grid">
+      <label>Nom / Hostname *<input name="nom" required></label>
+      <label>Type *<select name="type" required></select></label>
+      <label>Marque<input name="marque"></label>
+      <label>Modèle<input name="modele"></label>
+      <label>N° de série<input name="serie"></label>
+      <label>N° d’inventaire<input name="inventaire"></label>
+      <label>Adresse IP<input name="ip" class="mono" placeholder="192.168.1.10"></label>
+      <label>Adresse MAC<input name="mac" class="mono" placeholder="AA:BB:CC:DD:EE:FF"></label>
+      <label>Emplacement (bureau / salle)<input name="site" list="dl-sites"></label>
+      <label>Utilisateur / Responsable<input name="utilisateur"></label>
+      <label>Système d’exploitation / Firmware<input name="os"></label>
+      <label>Connecté à (switch / routeur)<select name="parent"></select></label>
+      <label>Port<input name="port" placeholder="Gi0/12"></label>
+      <label>État *<select name="etat" required></select></label>
+      <label>Date d’acquisition<input type="date" name="acquisition"></label>
+      <label>Fin de garantie<input type="date" name="garantie"></label>
+      <label class="full">Remarques<textarea name="notes" rows="2"></textarea></label>
+    </div>
+    <div id="equipement-errors"></div>
+    <div class="form-actions">
+      <button class="btn" value="cancel" formnovalidate>Annuler</button>
+      <button class="btn primary" value="save">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-reseau">
+  <form method="dialog" id="form-reseau">
+    <h3>Réseau</h3>
+    <input type="hidden" name="id">
+    <div class="form-grid">
+      <label>Nom *<input name="nom" required placeholder="LAN Administration"></label>
+      <label>VLAN<input name="vlan" type="number" min="1" max="4094"></label>
+      <label>Adresse réseau / CIDR *<input name="cidr" class="mono" required placeholder="192.168.1.0/24"></label>
+      <label>Passerelle<input name="passerelle" class="mono" placeholder="192.168.1.1"></label>
+      <label>DNS<input name="dns" class="mono" placeholder="8.8.8.8, 8.8.4.4"></label>
+      <label>Plage DHCP<input name="dhcp" class="mono" placeholder="192.168.1.100-192.168.1.200"></label>
+      <label class="full">Description<textarea name="description" rows="2"></textarea></label>
+    </div>
+    <div id="reseau-errors"></div>
+    <div class="form-actions">
+      <button class="btn" value="cancel" formnovalidate>Annuler</button>
+      <button class="btn primary" value="save">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-intervention">
+  <form method="dialog" id="form-intervention">
+    <h3>Intervention</h3>
+    <input type="hidden" name="id">
+    <div class="form-grid">
+      <label>Date *<input type="date" name="date" required></label>
+      <label>Équipement *<select name="equipement" required></select></label>
+      <label>Type *<select name="type" required>
+        <option>Maintenance préventive</option>
+        <option>Panne / Réparation</option>
+        <option>Installation</option>
+        <option>Mise à jour</option>
+        <option>Remplacement</option>
+        <option>Autre</option>
+      </select></label>
+      <label>Technicien<input name="technicien"></label>
+      <label>Statut *<select name="statut" required>
+        <option>Ouverte</option>
+        <option>En cours</option>
+        <option>Terminée</option>
+      </select></label>
+      <label class="full">Description *<textarea name="description" rows="3" required></textarea></label>
+    </div>
+    <div class="form-actions">
+      <button class="btn" value="cancel" formnovalidate>Annuler</button>
+      <button class="btn primary" value="save">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="dl-sites"></datalist>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "cidst-parc-reseau-v1";
+
+  const TYPES = [
+    "Ordinateur de bureau", "Ordinateur portable", "Serveur", "Switch", "Routeur",
+    "Pare-feu", "Point d’accès Wi-Fi", "Imprimante", "Scanner", "Onduleur",
+    "Téléphone IP", "Caméra IP", "NAS / Stockage", "Vidéoprojecteur", "Autre"
+  ];
+  const ETATS = {
+    "En service": "ok",
+    "En stock": "info",
+    "En panne": "ko",
+    "En maintenance": "warn",
+    "Réformé": "muted"
+  };
+  const INFRA_TYPES = ["Switch", "Routeur", "Pare-feu", "Point d’accès Wi-Fi", "Serveur"];
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const $ = (sel) => document.querySelector(sel);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- Réseau : utilitaires IP ----------
+  function ipToInt(ip) {
+    const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(ip || "").trim());
+    if (!m) return null;
+    const parts = m.slice(1).map(Number);
+    if (parts.some((p) => p > 255)) return null;
+    return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+  }
+  function intToIp(n) {
+    return [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+  }
+  function parseCidr(cidr) {
+    const [ip, bitsStr] = String(cidr || "").trim().split("/");
+    const base = ipToInt(ip);
+    const bits = Number(bitsStr);
+    if (base === null || !Number.isInteger(bits) || bits < 8 || bits > 32) return null;
+    const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+    const network = (base & mask) >>> 0;
+    const size = 2 ** (32 - bits);
+    const broadcast = (network + size - 1) >>> 0;
+    return { network, broadcast, bits, size, mask };
+  }
+  function inSubnet(ipInt, net) {
+    return ipInt !== null && ipInt >= net.network && ipInt <= net.broadcast;
+  }
+  const isValidMac = (mac) => /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(mac);
+  const normMac = (mac) => String(mac || "").trim().toUpperCase().replace(/-/g, ":");
+
+  // ---------- Données ----------
+  function demoData() {
+    const sw1 = uid(), rt1 = uid(), fw1 = uid(), srv1 = uid(), sw2 = uid(), ap1 = uid(), pc1 = uid();
+    const today = new Date();
+    const inDays = (d) => new Date(today.getTime() + d * 86400000).toISOString().slice(0, 10);
+    return {
+      equipements: [
+        { id: rt1, nom: "RT-CIDST-01", type: "Routeur", marque: "Cisco", modele: "ISR 4331", serie: "FDO2231A0B1", inventaire: "CIDST-0001", ip: "192.168.1.1", mac: "00:1A:2B:3C:4D:01", site: "Salle serveur", utilisateur: "Service RSI", os: "IOS XE 17.3", parent: "", port: "", etat: "En service", acquisition: "2021-03-15", garantie: inDays(60), notes: "Liaison FAI principale" },
+        { id: fw1, nom: "FW-CIDST-01", type: "Pare-feu", marque: "Fortinet", modele: "FortiGate 60F", serie: "FGT60FTK2109", inventaire: "CIDST-0002", ip: "192.168.1.2", mac: "00:1A:2B:3C:4D:02", site: "Salle serveur", utilisateur: "Service RSI", os: "FortiOS 7.2", parent: rt1, port: "Gi0/0/1", etat: "En service", acquisition: "2022-01-10", garantie: "2027-01-10", notes: "" },
+        { id: sw1, nom: "SW-CORE-01", type: "Switch", marque: "Cisco", modele: "Catalyst 2960X-48", serie: "FOC2045X1AB", inventaire: "CIDST-0003", ip: "192.168.1.3", mac: "00:1A:2B:3C:4D:03", site: "Salle serveur", utilisateur: "Service RSI", os: "IOS 15.2", parent: fw1, port: "port1", etat: "En service", acquisition: "2020-06-01", garantie: "2025-06-01", notes: "Switch cœur de réseau" },
+        { id: srv1, nom: "SRV-WEB-01", type: "Serveur", marque: "Dell", modele: "PowerEdge R440", serie: "7XK2J53", inventaire: "CIDST-0004", ip: "192.168.1.10", mac: "00:1A:2B:3C:4D:10", site: "Salle serveur", utilisateur: "Service RSI", os: "Ubuntu Server 22.04", parent: sw1, port: "Gi1/0/1", etat: "En service", acquisition: "2021-09-20", garantie: inDays(30), notes: "Site web cidst.recherches.gov.mg" },
+        { id: sw2, nom: "SW-ETAGE1-01", type: "Switch", marque: "TP-Link", modele: "TL-SG1024", serie: "2211A0012", inventaire: "CIDST-0005", ip: "192.168.1.4", mac: "00:1A:2B:3C:4D:04", site: "1er étage", utilisateur: "Service RSI", os: "", parent: sw1, port: "Gi1/0/48", etat: "En service", acquisition: "2019-11-05", garantie: "2022-11-05", notes: "" },
+        { id: ap1, nom: "AP-BIBLIO-01", type: "Point d’accès Wi-Fi", marque: "Ubiquiti", modele: "UniFi U6 Lite", serie: "UBNT6L0921", inventaire: "CIDST-0006", ip: "192.168.1.20", mac: "00:1A:2B:3C:4D:20", site: "Bibliothèque", utilisateur: "Service RSI", os: "UniFi 6.5", parent: sw2, port: "1", etat: "En service", acquisition: "2023-02-14", garantie: "2025-02-14", notes: "Wi-Fi lecteurs" },
+        { id: pc1, nom: "PC-DOC-01", type: "Ordinateur de bureau", marque: "HP", modele: "ProDesk 400 G7", serie: "CZC1234XYZ", inventaire: "CIDST-0010", ip: "192.168.10.101", mac: "00:1A:2B:3C:4D:65", site: "Bureau documentation", utilisateur: "Rakoto Jean", os: "Windows 11 Pro", parent: sw2, port: "5", etat: "En service", acquisition: "2022-05-03", garantie: "2025-05-03", notes: "" },
+        { id: uid(), nom: "PC-DOC-02", type: "Ordinateur portable", marque: "Lenovo", modele: "ThinkPad E14", serie: "PF3AB12C", inventaire: "CIDST-0011", ip: "192.168.10.102", mac: "00:1A:2B:3C:4D:66", site: "Bureau documentation", utilisateur: "Rasoa Marie", os: "Windows 10 Pro", parent: ap1, port: "Wi-Fi", etat: "En maintenance", acquisition: "2020-08-12", garantie: "2023-08-12", notes: "Batterie à remplacer" },
+        { id: uid(), nom: "IMP-ACCUEIL-01", type: "Imprimante", marque: "Canon", modele: "i-SENSYS MF445dw", serie: "XKF12345", inventaire: "CIDST-0020", ip: "192.168.10.50", mac: "00:1A:2B:3C:4D:32", site: "Accueil", utilisateur: "Accueil", os: "", parent: sw2, port: "12", etat: "En panne", acquisition: "2021-04-01", garantie: "2024-04-01", notes: "Bourrage papier récurrent" },
+        { id: uid(), nom: "OND-SRV-01", type: "Onduleur", marque: "APC", modele: "Smart-UPS 1500", serie: "AS2011123456", inventaire: "CIDST-0030", ip: "", mac: "", site: "Salle serveur", utilisateur: "Service RSI", os: "", parent: "", port: "", etat: "En service", acquisition: "2020-06-01", garantie: inDays(75), notes: "Batteries changées en 2024" },
+        { id: uid(), nom: "PC-STOCK-01", type: "Ordinateur de bureau", marque: "Dell", modele: "OptiPlex 3080", serie: "9HJ3K21", inventaire: "CIDST-0040", ip: "", mac: "", site: "Magasin", utilisateur: "", os: "Windows 11 Pro", parent: "", port: "", etat: "En stock", acquisition: "2024-01-15", garantie: "2027-01-15", notes: "" }
+      ],
+      reseaux: [
+        { id: uid(), nom: "LAN Infrastructure", vlan: 1, cidr: "192.168.1.0/24", passerelle: "192.168.1.1", dns: "192.168.1.10, 8.8.8.8", dhcp: "", description: "Équipements réseau et serveurs" },
+        { id: uid(), nom: "LAN Utilisateurs", vlan: 10, cidr: "192.168.10.0/24", passerelle: "192.168.10.1", dns: "192.168.1.10, 8.8.8.8", dhcp: "192.168.10.100-192.168.10.200", description: "Postes de travail et imprimantes" }
+      ],
+      interventions: [
+        { id: uid(), date: today.toISOString().slice(0, 10), equipement: "", type: "Panne / Réparation", technicien: "Service RSI", statut: "Ouverte", description: "Imprimante de l’accueil hors service" }
+      ]
+    };
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        return { equipements: d.equipements || [], reseaux: d.reseaux || [], interventions: d.interventions || [] };
+      }
+    } catch (e) { console.error(e); }
+    const d = demoData();
+    const imp = d.equipements.find((e) => e.type === "Imprimante");
+    if (imp) d.interventions[0].equipement = imp.id;
+    return d;
+  }
+  let data = load();
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    renderAll();
+  }
+
+  const equipementById = (id) => data.equipements.find((e) => e.id === id);
+
+  // ---------- Détection des anomalies ----------
+  function findConflicts() {
+    const ipMap = {}, macMap = {};
+    data.equipements.forEach((e) => {
+      if (e.etat === "Réformé") return;
+      if (e.ip) (ipMap[e.ip] = ipMap[e.ip] || []).push(e);
+      if (e.mac) (macMap[normMac(e.mac)] = macMap[normMac(e.mac)] || []).push(e);
+    });
+    const ip = Object.entries(ipMap).filter(([, l]) => l.length > 1);
+    const mac = Object.entries(macMap).filter(([, l]) => l.length > 1);
+    return { ip, mac };
+  }
+
+  function daysUntil(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + "T00:00:00");
+    if (isNaN(d)) return null;
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    return Math.round((d - now) / 86400000);
+  }
+
+  // ---------- Rendu : tableau de bord ----------
+  function renderBars(container, counts) {
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...entries.map(([, v]) => v));
+    container.innerHTML = entries.length
+      ? entries.map(([k, v]) => `<div class="bar-row"><span class="name">${esc(k)}</span><span class="bar"><span style="width:${(v / max) * 100}%"></span></span><span class="count">${v}</span></div>`).join("")
+      : `<p class="hint">Aucune donnée.</p>`;
+  }
+
+  function renderDashboard() {
+    const eq = data.equipements;
+    const count = (f) => eq.filter(f).length;
+    const stats = [
+      ["Équipements", eq.length],
+      ["En service", count((e) => e.etat === "En service")],
+      ["En panne / maintenance", count((e) => e.etat === "En panne" || e.etat === "En maintenance")],
+      ["Équipements réseau", count((e) => INFRA_TYPES.includes(e.type))],
+      ["Réseaux déclarés", data.reseaux.length],
+      ["Interventions ouvertes", data.interventions.filter((i) => i.statut !== "Terminée").length]
+    ];
+    $("#stats").innerHTML = stats.map(([l, v]) => `<div class="card stat"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+
+    const group = (key) => eq.reduce((acc, e) => { const k = e[key] || "Non renseigné"; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+    renderBars($("#chart-type"), group("type"));
+    renderBars($("#chart-site"), group("site"));
+    renderBars($("#chart-etat"), group("etat"));
+
+    const soon = eq
+      .map((e) => ({ e, d: daysUntil(e.garantie) }))
+      .filter((x) => x.d !== null && x.d >= 0 && x.d <= 90 && x.e.etat !== "Réformé")
+      .sort((a, b) => a.d - b.d);
+    $("#garanties").innerHTML = soon.length
+      ? `<table><tbody>${soon.map(({ e, d }) => `<tr><td>${esc(e.nom)}</td><td>${esc(e.type)}</td><td><span class="badge ${d <= 30 ? "ko" : "warn"}">${d} j</span></td></tr>`).join("")}</tbody></table>`
+      : `<p class="hint">Aucune garantie n’expire dans les 90 prochains jours.</p>`;
+
+    const { ip, mac } = findConflicts();
+    const alerts = [];
+    ip.forEach(([addr, l]) => alerts.push(`<div class="alert ko">Conflit d’adresse IP <b class="mono">${esc(addr)}</b> : ${l.map((e) => esc(e.nom)).join(", ")}</div>`));
+    mac.forEach(([addr, l]) => alerts.push(`<div class="alert ko">Adresse MAC en double <b class="mono">${esc(addr)}</b> : ${l.map((e) => esc(e.nom)).join(", ")}</div>`));
+    const pannes = eq.filter((e) => e.etat === "En panne");
+    if (pannes.length) alerts.push(`<div class="alert warn">${pannes.length} équipement(s) en panne : ${pannes.map((e) => esc(e.nom)).join(", ")}</div>`);
+    const outside = eq.filter((e) => e.ip && data.reseaux.length && !data.reseaux.some((r) => { const n = parseCidr(r.cidr); return n && inSubnet(ipToInt(e.ip), n); }));
+    if (outside.length) alerts.push(`<div class="alert warn">${outside.length} adresse(s) IP hors des réseaux déclarés : ${outside.map((e) => `${esc(e.nom)} (<span class="mono">${esc(e.ip)}</span>)`).join(", ")}</div>`);
+    $("#alerts").innerHTML = alerts.join("");
+  }
+
+  // ---------- Rendu : équipements ----------
+  let sortKey = "nom", sortDir = 1;
+
+  function fillSelect(sel, values, keepFirst = true) {
+    const current = sel.value;
+    const first = keepFirst ? sel.options[0].outerHTML : "";
+    sel.innerHTML = first + values.map((v) => `<option>${esc(v)}</option>`).join("");
+    sel.value = values.includes(current) ? current : (keepFirst ? "" : values[0] || "");
+  }
+
+  function sites() {
+    return [...new Set(data.equipements.map((e) => e.site).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  }
+
+  function renderEquipements() {
+    fillSelect($("#filter-type"), TYPES);
+    fillSelect($("#filter-etat"), Object.keys(ETATS));
+    fillSelect($("#filter-site"), sites());
+    $("#dl-sites").innerHTML = sites().map((s) => `<option value="${esc(s)}">`).join("");
+
+    const q = $("#search").value.trim().toLowerCase();
+    const ft = $("#filter-type").value, fe = $("#filter-etat").value, fs = $("#filter-site").value;
+    const { ip: ipConf } = findConflicts();
+    const conflictIps = new Set(ipConf.map(([a]) => a));
+
+    const rows = data.equipements
+      .filter((e) => (!ft || e.type === ft) && (!fe || e.etat === fe) && (!fs || e.site === fs))
+      .filter((e) => !q || ["nom", "type", "marque", "modele", "serie", "inventaire", "ip", "mac", "site", "utilisateur", "os", "notes"].some((k) => String(e[k] || "").toLowerCase().includes(q)))
+      .sort((a, b) => {
+        if (sortKey === "ip") return ((ipToInt(a.ip) ?? Infinity) - (ipToInt(b.ip) ?? Infinity)) * sortDir;
+        return String(a[sortKey] || "").localeCompare(String(b[sortKey] || ""), "fr", { numeric: true }) * sortDir;
+      });
+
+    $("#tbody-equipements").innerHTML = rows.length
+      ? rows.map((e) => `<tr>
+          <td><b>${esc(e.nom)}</b>${e.inventaire ? `<br><span class="hint">${esc(e.inventaire)}</span>` : ""}</td>
+          <td>${esc(e.type)}</td>
+          <td>${esc([e.marque, e.modele].filter(Boolean).join(" "))}</td>
+          <td class="mono">${esc(e.ip)}${conflictIps.has(e.ip) ? ` <span class="badge ko" title="Conflit d’adresse IP">conflit</span>` : ""}</td>
+          <td class="mono">${esc(e.mac)}</td>
+          <td>${esc(e.site)}</td>
+          <td>${esc(e.utilisateur)}</td>
+          <td><span class="badge ${ETATS[e.etat] || "muted"}">${esc(e.etat)}</span></td>
+          <td class="actions">
+            <button class="btn small" data-edit="${e.id}">Modifier</button>
+            <button class="btn small" data-dup="${e.id}" title="Dupliquer">⧉</button>
+            <button class="btn small danger" data-del="${e.id}">Supprimer</button>
+          </td></tr>`).join("")
+      : `<tr><td colspan="9" class="empty">Aucun équipement trouvé.</td></tr>`;
+    $("#count-equipements").textContent = `${rows.length} équipement(s) affiché(s) sur ${data.equipements.length}.`;
+
+    document.querySelectorAll("th[data-sort]").forEach((th) => {
+      th.textContent = th.textContent.replace(/ [▲▼]$/, "") + (th.dataset.sort === sortKey ? (sortDir > 0 ? " ▲" : " ▼") : "");
+    });
+  }
+
+  // ---------- Rendu : réseaux ----------
+  function renderReseaux() {
+    const list = $("#reseaux-list");
+    if (!data.reseaux.length) {
+      list.innerHTML = `<div class="card empty">Aucun réseau déclaré.</div>`;
+      return;
+    }
+    list.innerHTML = data.reseaux.map((r) => {
+      const n = parseCidr(r.cidr);
+      if (!n) return `<div class="card"><h2>${esc(r.nom)}</h2><div class="alert ko">CIDR invalide : ${esc(r.cidr)}</div></div>`;
+      const hosts = n.bits >= 31 ? n.size : n.size - 2;
+      const members = data.equipements.filter((e) => e.etat !== "Réformé" && inSubnet(ipToInt(e.ip), n));
+      const byIp = {};
+      members.forEach((e) => { const k = ipToInt(e.ip); (byIp[k] = byIp[k] || []).push(e); });
+      const usedCount = Object.keys(byIp).length;
+      const pct = hosts > 0 ? Math.round((usedCount / hosts) * 100) : 0;
+
+      let dhcpStart = null, dhcpEnd = null;
+      if (r.dhcp && r.dhcp.includes("-")) {
+        const [a, b] = r.dhcp.split("-").map((s) => ipToInt(s.trim()));
+        dhcpStart = a; dhcpEnd = b;
+      }
+      let grid = "";
+      if (n.size <= 256) {
+        const cells = [];
+        for (let i = n.network; i <= n.broadcast; i++) {
+          const last = i & 255;
+          const eqs = byIp[i];
+          let cls = "", title = intToIp(i);
+          if (i === n.network || i === n.broadcast) { cls = "reserved"; title += i === n.network ? " (réseau)" : " (broadcast)"; }
+          else if (eqs && eqs.length > 1) { cls = "conflict"; title += " – CONFLIT : " + eqs.map((e) => e.nom).join(", "); }
+          else if (eqs) { cls = "used"; title += " – " + eqs[0].nom; }
+          else if (i === ipToInt(r.passerelle)) { cls = "reserved"; title += " (passerelle)"; }
+          else if (dhcpStart !== null && i >= dhcpStart && i <= dhcpEnd) { title += " (plage DHCP)"; cells.push(`<div title="${esc(title)}" style="background:#dbeafe">${last}</div>`); continue; }
+          cells.push(`<div class="${cls}" title="${esc(title)}">${last}</div>`);
+        }
+        grid = `<div class="subnet-grid">${cells.join("")}</div>
+          <div class="legend"><span><i style="background:var(--primary)"></i>Utilisée</span><span><i style="background:var(--warn)"></i>Conflit</span><span><i style="background:#dbeafe"></i>DHCP</span><span><i style="background:#eef2f7"></i>Libre</span><span><i style="background:#9ca3af"></i>Réservée (réseau, passerelle, broadcast)</span></div>`;
+      }
+      const freeSuggestion = (() => {
+        for (let i = n.network + 1; i < n.broadcast; i++) {
+          if (byIp[i] || ipToInt(r.passerelle) === i) continue;
+          if (dhcpStart !== null && i >= dhcpStart && i <= dhcpEnd) continue;
+          return intToIp(i);
+        }
+        return null;
+      })();
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:10px">
+          <div><h2 style="margin-bottom:4px">${esc(r.nom)} ${r.vlan ? `<span class="badge info">VLAN ${esc(r.vlan)}</span>` : ""}</h2>
+          <div class="hint">${esc(r.description)}</div></div>
+          <div style="display:flex;gap:6px"><button class="btn small" data-edit-reseau="${r.id}">Modifier</button><button class="btn small danger" data-del-reseau="${r.id}">Supprimer</button></div>
+        </div>
+        <table style="margin-top:10px"><tbody>
+          <tr><td>Réseau</td><td class="mono">${intToIp(n.network)}/${n.bits}</td></tr>
+          <tr><td>Masque</td><td class="mono">${intToIp(n.mask)}</td></tr>
+          <tr><td>Passerelle</td><td class="mono">${esc(r.passerelle) || "–"}</td></tr>
+          <tr><td>DNS</td><td class="mono">${esc(r.dns) || "–"}</td></tr>
+          <tr><td>Plage DHCP</td><td class="mono">${esc(r.dhcp) || "–"}</td></tr>
+          <tr><td>Hôtes utilisables</td><td>${hosts}</td></tr>
+          <tr><td>Occupation</td><td>${usedCount} / ${hosts} (${pct} %)</td></tr>
+          <tr><td>Prochaine IP libre (hors DHCP)</td><td class="mono">${freeSuggestion || "aucune"}</td></tr>
+        </tbody></table>
+        ${grid}
+      </div>`;
+    }).join("");
+  }
+
+  // ---------- Rendu : topologie ----------
+  function renderTopologie() {
+    const children = {};
+    const ids = new Set(data.equipements.map((e) => e.id));
+    data.equipements.forEach((e) => {
+      const p = e.parent && ids.has(e.parent) ? e.parent : "";
+      (children[p] = children[p] || []).push(e);
+    });
+    const roots = (children[""] || []).filter((e) => INFRA_TYPES.includes(e.type) || children[e.id]);
+    const seen = new Set();
+    const node = (e) => {
+      if (seen.has(e.id)) return "";
+      seen.add(e.id);
+      const kids = children[e.id] || [];
+      return `<div class="topo-node">
+        <div class="title">${esc(e.nom)} <span class="hint">– ${esc(e.type)}${e.ip ? ` – <span class="mono">${esc(e.ip)}</span>` : ""}${e.port ? ` – port ${esc(e.port)}` : ""}</span> <span class="badge ${ETATS[e.etat] || "muted"}">${esc(e.etat)}</span></div>
+        ${kids.length ? `<div class="children">${kids.map(node).join("")}</div>` : ""}
+      </div>`;
+    };
+    const html = roots.map(node).join("");
+    const orphans = data.equipements.filter((e) => !seen.has(e.id) && !e.parent && e.etat !== "En stock" && e.etat !== "Réformé");
+    $("#topo").innerHTML = (html || `<p class="hint">Aucun équipement réseau. Renseignez le champ « Connecté à » des équipements.</p>`)
+      + (orphans.length ? `<div class="topo-node" style="border-left-color:var(--warn)"><div class="title">Non raccordés</div><div class="children">${orphans.map((e) => `<div>${esc(e.nom)} <span class="hint">– ${esc(e.type)}</span></div>`).join("")}</div></div>` : "");
+  }
+
+  // ---------- Rendu : interventions ----------
+  function renderInterventions() {
+    const rows = [...data.interventions].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    const cls = { "Ouverte": "ko", "En cours": "warn", "Terminée": "ok" };
+    $("#tbody-interventions").innerHTML = rows.length
+      ? rows.map((i) => {
+          const e = equipementById(i.equipement);
+          return `<tr>
+            <td>${esc(i.date)}</td>
+            <td>${e ? esc(e.nom) : `<span class="hint">(supprimé)</span>`}</td>
+            <td>${esc(i.type)}</td>
+            <td style="white-space:normal;min-width:240px">${esc(i.description)}</td>
+            <td>${esc(i.technicien)}</td>
+            <td><span class="badge ${cls[i.statut] || "muted"}">${esc(i.statut)}</span></td>
+            <td class="actions"><button class="btn small" data-edit-int="${i.id}">Modifier</button><button class="btn small danger" data-del-int="${i.id}">Supprimer</button></td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="7" class="empty">Aucune intervention enregistrée.</td></tr>`;
+  }
+
+  function renderAll() {
+    renderDashboard();
+    renderEquipements();
+    renderReseaux();
+    renderTopologie();
+    renderInterventions();
+  }
+
+  // ---------- Formulaires ----------
+  const formToObj = (form) => Object.fromEntries(new FormData(form).entries());
+  function fillForm(form, obj) {
+    [...form.elements].forEach((el) => { if (el.name) el.value = obj[el.name] ?? ""; });
+  }
+
+  function openEquipement(eq, title) {
+    const form = $("#form-equipement");
+    form.elements.type.innerHTML = TYPES.map((t) => `<option>${esc(t)}</option>`).join("");
+    form.elements.etat.innerHTML = Object.keys(ETATS).map((t) => `<option>${esc(t)}</option>`).join("");
+    const parents = data.equipements.filter((e) => INFRA_TYPES.includes(e.type) && (!eq || e.id !== eq.id));
+    form.elements.parent.innerHTML = `<option value="">— Aucun —</option>` + parents.map((p) => `<option value="${p.id}">${esc(p.nom)} (${esc(p.type)})</option>`).join("");
+    fillForm(form, eq || { type: TYPES[0], etat: "En service" });
+    $("#dlg-equipement-title").textContent = title;
+    $("#equipement-errors").innerHTML = "";
+    $("#dlg-equipement").showModal();
+  }
+
+  $("#form-equipement").addEventListener("submit", (ev) => {
+    if (ev.submitter && ev.submitter.value === "cancel") return;
+    const obj = formToObj(ev.target);
+    obj.ip = obj.ip.trim();
+    obj.mac = obj.mac ? normMac(obj.mac) : "";
+    const errors = [];
+    if (obj.ip && ipToInt(obj.ip) === null) errors.push("Adresse IP invalide.");
+    if (obj.mac && !isValidMac(obj.mac)) errors.push("Adresse MAC invalide (format AA:BB:CC:DD:EE:FF).");
+    const others = data.equipements.filter((e) => e.id !== obj.id && e.etat !== "Réformé");
+    if (obj.ip && obj.etat !== "Réformé") {
+      const dup = others.find((e) => e.ip === obj.ip);
+      if (dup) errors.push(`L’adresse IP ${obj.ip} est déjà attribuée à ${dup.nom}.`);
+    }
+    if (obj.mac && obj.etat !== "Réformé") {
+      const dup = others.find((e) => normMac(e.mac) === obj.mac);
+      if (dup) errors.push(`L’adresse MAC ${obj.mac} est déjà attribuée à ${dup.nom}.`);
+    }
+    if (errors.length) {
+      ev.preventDefault();
+      $("#equipement-errors").innerHTML = errors.map((e) => `<div class="alert ko">${esc(e)}</div>`).join("");
+      return;
+    }
+    if (obj.id) {
+      const i = data.equipements.findIndex((e) => e.id === obj.id);
+      data.equipements[i] = obj;
+    } else {
+      obj.id = uid();
+      data.equipements.push(obj);
+    }
+    save();
+  });
+
+  $("#form-reseau").addEventListener("submit", (ev) => {
+    if (ev.submitter && ev.submitter.value === "cancel") return;
+    const obj = formToObj(ev.target);
+    const errors = [];
+    if (!parseCidr(obj.cidr)) errors.push("Adresse réseau invalide. Format attendu : 192.168.1.0/24 (masque /8 à /32).");
+    if (obj.passerelle && ipToInt(obj.passerelle) === null) errors.push("Passerelle invalide.");
+    if (obj.dhcp) {
+      const parts = obj.dhcp.split("-").map((s) => ipToInt(s.trim()));
+      if (parts.length !== 2 || parts.includes(null) || parts[0] > parts[1]) errors.push("Plage DHCP invalide. Format attendu : 192.168.1.100-192.168.1.200.");
+    }
+    if (errors.length) {
+      ev.preventDefault();
+      $("#reseau-errors").innerHTML = errors.map((e) => `<div class="alert ko">${esc(e)}</div>`).join("");
+      return;
+    }
+    if (obj.id) {
+      const i = data.reseaux.findIndex((r) => r.id === obj.id);
+      data.reseaux[i] = obj;
+    } else {
+      obj.id = uid();
+      data.reseaux.push(obj);
+    }
+    save();
+  });
+
+  $("#form-intervention").addEventListener("submit", (ev) => {
+    if (ev.submitter && ev.submitter.value === "cancel") return;
+    const obj = formToObj(ev.target);
+    if (obj.id) {
+      const i = data.interventions.findIndex((x) => x.id === obj.id);
+      data.interventions[i] = obj;
+    } else {
+      obj.id = uid();
+      data.interventions.push(obj);
+    }
+    save();
+  });
+
+  function openReseau(r) {
+    fillForm($("#form-reseau"), r || {});
+    $("#reseau-errors").innerHTML = "";
+    $("#dlg-reseau").showModal();
+  }
+
+  function openIntervention(i) {
+    if (!data.equipements.length) { alert("Ajoutez d’abord un équipement."); return; }
+    const form = $("#form-intervention");
+    form.elements.equipement.innerHTML = [...data.equipements]
+      .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
+      .map((e) => `<option value="${e.id}">${esc(e.nom)}</option>`).join("");
+    fillForm(form, i || { date: new Date().toISOString().slice(0, 10), type: "Maintenance préventive", statut: "Ouverte", equipement: data.equipements[0].id });
+    $("#dlg-intervention").showModal();
+  }
+
+  // ---------- Événements ----------
+  document.querySelectorAll("nav.tabs button").forEach((btn) => btn.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+    document.querySelectorAll("section.view").forEach((s) => s.classList.toggle("active", s.id === "view-" + btn.dataset.view));
+    history.replaceState(null, "", "#" + btn.dataset.view);
+  }));
+  const initial = location.hash.slice(1);
+  if (initial) { const b = document.querySelector(`nav.tabs button[data-view="${CSS.escape(initial)}"]`); if (b) b.click(); }
+
+  ["#search", "#filter-type", "#filter-etat", "#filter-site"].forEach((s) => $(s).addEventListener("input", renderEquipements));
+  document.querySelectorAll("th[data-sort]").forEach((th) => th.addEventListener("click", () => {
+    if (sortKey === th.dataset.sort) sortDir = -sortDir; else { sortKey = th.dataset.sort; sortDir = 1; }
+    renderEquipements();
+  }));
+
+  $("#btn-add").addEventListener("click", () => openEquipement(null, "Nouvel équipement"));
+  $("#btn-add-reseau").addEventListener("click", () => openReseau(null));
+  $("#btn-add-intervention").addEventListener("click", () => openIntervention(null));
+
+  document.body.addEventListener("click", (ev) => {
+    const t = ev.target.closest("button");
+    if (!t) return;
+    const d = t.dataset;
+    if (d.edit) openEquipement(equipementById(d.edit), "Modifier l’équipement");
+    else if (d.dup) {
+      const src = equipementById(d.dup);
+      openEquipement({ ...src, id: "", nom: src.nom + "-copie", ip: "", mac: "", serie: "", inventaire: "" }, "Dupliquer l’équipement");
+    } else if (d.del) {
+      const e = equipementById(d.del);
+      if (confirm(`Supprimer l’équipement « ${e.nom} » ?`)) {
+        data.equipements = data.equipements.filter((x) => x.id !== d.del);
+        data.equipements.forEach((x) => { if (x.parent === d.del) x.parent = ""; });
+        save();
+      }
+    } else if (d.editReseau) openReseau(data.reseaux.find((r) => r.id === d.editReseau));
+    else if (d.delReseau) {
+      if (confirm("Supprimer ce réseau ?")) { data.reseaux = data.reseaux.filter((r) => r.id !== d.delReseau); save(); }
+    } else if (d.editInt) openIntervention(data.interventions.find((i) => i.id === d.editInt));
+    else if (d.delInt) {
+      if (confirm("Supprimer cette intervention ?")) { data.interventions = data.interventions.filter((i) => i.id !== d.delInt); save(); }
+    }
+  });
+
+  // ---------- Import / Export ----------
+  const CSV_FIELDS = ["nom", "type", "marque", "modele", "serie", "inventaire", "ip", "mac", "site", "utilisateur", "os", "parent", "port", "etat", "acquisition", "garantie", "notes"];
+
+  function download(name, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const stamp = () => new Date().toISOString().slice(0, 10);
+
+  $("#btn-export-json").addEventListener("click", () => {
+    download(`parc-reseau-cidst-${stamp()}.json`, JSON.stringify(data, null, 2), "application/json");
+  });
+
+  $("#btn-export-csv").addEventListener("click", () => {
+    const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [CSV_FIELDS.join(";")].concat(data.equipements.map((e) =>
+      CSV_FIELDS.map((f) => cell(f === "parent" ? (equipementById(e.parent)?.nom || "") : e[f])).join(";")));
+    download(`equipements-cidst-${stamp()}.csv`, "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8");
+  });
+
+  function parseCsv(text) {
+    text = text.replace(/^\uFEFF/, "");
+    const firstLine = text.split(/\r?\n/, 1)[0];
+    const sep = (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ";" : ",";
+    const rows = [];
+    let row = [], field = "", inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') inQ = false;
+        else field += c;
+      } else if (c === '"') inQ = true;
+      else if (c === sep) { row.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(field); rows.push(row); row = []; field = "";
+      } else field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r) => r.some((v) => v.trim()));
+  }
+
+  $("#file-import").addEventListener("change", async (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const out = $("#import-result");
+    try {
+      const text = await file.text();
+      if (file.name.toLowerCase().endsWith(".json")) {
+        const d = JSON.parse(text);
+        if (!Array.isArray(d.equipements)) throw new Error("Fichier JSON non reconnu.");
+        if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
+        data = { equipements: d.equipements, reseaux: d.reseaux || [], interventions: d.interventions || [] };
+        save();
+        out.innerHTML = `<div class="alert ok">Sauvegarde restaurée : ${data.equipements.length} équipement(s).</div>`;
+      } else {
+        const rows = parseCsv(text);
+        if (rows.length < 2) throw new Error("Le fichier CSV est vide.");
+        const headers = rows[0].map((h) => h.trim().toLowerCase());
+        if (!headers.includes("nom")) throw new Error("La colonne « nom » est obligatoire.");
+        const byName = Object.fromEntries(data.equipements.map((e) => [e.nom, e.id]));
+        const imported = rows.slice(1).map((r) => {
+          const o = { id: uid() };
+          CSV_FIELDS.forEach((f) => { const i = headers.indexOf(f); o[f] = i >= 0 ? (r[i] || "").trim() : ""; });
+          if (!TYPES.includes(o.type)) o.type = o.type ? "Autre" : TYPES[0];
+          if (!ETATS[o.etat]) o.etat = "En service";
+          if (o.mac) o.mac = normMac(o.mac);
+          return o;
+        }).filter((o) => o.nom);
+        imported.forEach((o) => { byName[o.nom] = byName[o.nom] || o.id; });
+        imported.forEach((o) => { o.parent = byName[o.parent] || ""; });
+        data.equipements.push(...imported);
+        save();
+        out.innerHTML = `<div class="alert ok">${imported.length} équipement(s) importé(s).</div>`;
+      }
+    } catch (e) {
+      out.innerHTML = `<div class="alert ko">Erreur d’import : ${esc(e.message)}</div>`;
+    } finally {
+      ev.target.value = "";
+    }
+  });
+
+  $("#btn-demo").addEventListener("click", () => {
+    if (!confirm("Remplacer les données actuelles par les données d’exemple ?")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    data = load();
+    save();
+  });
+  $("#btn-clear").addEventListener("click", () => {
+    if (!confirm("Effacer définitivement toutes les données du parc ?")) return;
+    data = { equipements: [], reseaux: [], interventions: [] };
+    save();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
